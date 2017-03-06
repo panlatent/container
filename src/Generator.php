@@ -8,7 +8,8 @@
 
 namespace Panlatent\Container;
 
-class Generator {
+class Generator
+{
 
     protected $container;
 

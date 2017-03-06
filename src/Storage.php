@@ -8,7 +8,8 @@
 
 namespace Panlatent\Container;
 
-class Storage implements \ArrayAccess, \Countable, \Iterator {
+class Storage implements \ArrayAccess, \Countable, \Iterator
+{
 
     /**
      * @var array

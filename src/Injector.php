@@ -8,7 +8,8 @@
 
 namespace Panlatent\Container;
 
-class Injector {
+class Injector
+{
 
     protected $container;
 

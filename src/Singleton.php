@@ -8,7 +8,8 @@
 
 namespace Panlatent\Container;
 
-interface Singleton {
+interface Singleton
+{
 
     /**
      * Return a singleton object.

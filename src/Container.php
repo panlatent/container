@@ -8,7 +8,8 @@
  */
 namespace Panlatent\Container;
 
-class Container implements  Containable, Singleton, \ArrayAccess, \Countable {
+class Container implements  Containable, Singleton, \ArrayAccess, \Countable
+{
 
     /**
      * @var static

@@ -8,7 +8,8 @@
 
 namespace Panlatent\Container;
 
-interface Containable {
+interface Containable
+{
 
     /**
      * Gets an object from this container.

@@ -8,7 +8,8 @@
 
 namespace Panlatent\Container;
 
-class ObjectStorage extends Storage implements \ArrayAccess, \Countable, \Iterator {
+class ObjectStorage extends Storage implements \ArrayAccess, \Countable, \Iterator
+{
 
     public function find($className)
     {
