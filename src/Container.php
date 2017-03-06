@@ -6,9 +6,12 @@
  * @link    https://github.com/panlatent/container
  * @license https://opensource.org/licenses/MIT
  */
+
 namespace Panlatent\Container;
 
-class Container implements  Containable, Singleton, \ArrayAccess, \Countable
+use Psr\Container\ContainerInterface;
+
+class Container implements ContainerInterface, Containable, Singleton, \ArrayAccess, \Countable
 {
 
     /**
@@ -77,7 +80,7 @@ class Container implements  Containable, Singleton, \ArrayAccess, \Countable
             /** @var \Panlatent\Container\Generator $generator */
             $generator = $this->generators->get($name);
             if ( ! ($object = $generator->make())) {
-                return false;
+                throw new NotFoundException("Not found $name");
             }
             if ($generator->singleton() || $object instanceof Singleton) {
                 $this->storage->set($name, $object);
@@ -85,7 +88,7 @@ class Container implements  Containable, Singleton, \ArrayAccess, \Countable
             return $object;
         }
 
-        return false;
+        throw new NotFoundException("Not found $name");
     }
 
     public function has($name)

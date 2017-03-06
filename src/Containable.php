@@ -8,7 +8,9 @@
 
 namespace Panlatent\Container;
 
-interface Containable
+use Psr\Container\ContainerInterface;
+
+interface Containable extends ContainerInterface
 {
 
     /**
