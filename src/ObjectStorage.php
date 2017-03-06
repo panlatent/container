@@ -8,8 +8,19 @@
 
 namespace Panlatent\Container;
 
-class ObjectStorage extends Storage implements \ArrayAccess, \Countable, \Iterator
+use Panlatent\Boost\Storable;
+use Panlatent\Boost\Storage;
+
+class ObjectStorage extends Storage implements \ArrayAccess, \Countable, \Iterator, Storable
 {
+    public function set($name, $object)
+    {
+        if ( ! is_object($object)) {
+            throw new Exception("");
+        }
+
+        $this->storage[$name] = $object;
+    }
 
     public function find($className)
     {
@@ -32,5 +43,4 @@ class ObjectStorage extends Storage implements \ArrayAccess, \Countable, \Iterat
 
         return false;
     }
-
 }

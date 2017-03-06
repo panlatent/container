@@ -9,18 +9,18 @@
 
 namespace Panlatent\Container;
 
+use Panlatent\Boost\Storage;
 use Psr\Container\ContainerInterface;
 
 class Container implements ContainerInterface, Containable, Singleton, \ArrayAccess, \Countable
 {
-
     /**
      * @var static
      */
     static protected $singleton;
 
     /**
-     * @var \Panlatent\Container\Storage
+     * @var \Panlatent\Boost\Storage
      */
     protected $generators;
 

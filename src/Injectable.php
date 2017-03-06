@@ -9,7 +9,6 @@
 namespace Panlatent\Container;
 
 interface Injectable {
-
     /**
      * @return \Panlatent\Container\Containable
      */

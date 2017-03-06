@@ -10,7 +10,6 @@ namespace Panlatent\Container;
 
 class Generator
 {
-
     protected $container;
 
     protected $gen;

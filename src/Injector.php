@@ -10,7 +10,6 @@ namespace Panlatent\Container;
 
 class Injector
 {
-
     protected $container;
 
     protected $target;
