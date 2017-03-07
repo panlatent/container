@@ -10,20 +10,44 @@ namespace Panlatent\Container;
 
 class Injector
 {
+    /**
+     * @var Containable
+     */
     protected $container;
 
+    /**
+     * @var string|object|callable
+     */
     protected $target;
 
+    /**
+     * @var bool
+     */
     protected $isConstructor;
 
+    /**
+     * @var array
+     */
     protected $parameters = [];
 
+    /**
+     * @var array
+     */
     protected $needParameterTypes = [];
 
+    /**
+     * @var array
+     */
     protected $extraValues = [];
 
+    /**
+     * @var \ReflectionClass
+     */
     protected $reflectionClass;
 
+    /**
+     * @var \ReflectionParameter[]
+     */
     protected $reflectionParameters;
 
     public function __construct(Containable $container, $target, $isConstructor = false)
@@ -58,6 +82,11 @@ class Injector
         } else {
             return call_user_func_array($this->target, $this->parameters);
         }
+    }
+
+    public function __invoke($extras = [])
+    {
+        return $this->handle($extras);
     }
 
     protected function getNeedParameterTypes()

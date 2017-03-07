@@ -57,6 +57,7 @@ class Container implements ContainerInterface, Containable, Singleton, \ArrayAcc
     public function injectNew($class)
     {
         $injector =  new Injector($this, $class, true);
+
         return $injector->handle();
     }
 
@@ -82,7 +83,7 @@ class Container implements ContainerInterface, Containable, Singleton, \ArrayAcc
             if ( ! ($object = $generator->make())) {
                 throw new NotFoundException("Not found $name");
             }
-            if ($generator->singleton() || $object instanceof Singleton) {
+            if ($generator->isSingleton() || $object instanceof Singleton) {
                 $this->storage->set($name, $object);
             }
             return $object;
@@ -93,12 +94,28 @@ class Container implements ContainerInterface, Containable, Singleton, \ArrayAcc
 
     public function has($name)
     {
-
+        if ( ! $this->storage->has($name) && ! $this->generators->has($name)) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     public function remove($name)
     {
+        $removed = false;
+        if ($this->storage->has($name)) {
+            $this->storage->destroy($name);
+            $removed = true;
+        }
+        if ($this->generators->has($name)) {
+            $this->generators->destroy($name);
+            $removed = true;
+        }
 
+        if ( ! $removed) {
+            throw new Exception();
+        }
     }
 
     public function set($name, $builder, $singleton = false)
@@ -106,9 +123,16 @@ class Container implements ContainerInterface, Containable, Singleton, \ArrayAcc
         if (is_string($builder) || is_callable($builder)) {
             $this->generators->set($name, new Generator($this, $builder, $singleton));
         } elseif (is_object($builder)) {
-            $this->storage->set($name, $builder);
+            if ($singleton) {
+                $this->storage->set($name, $builder);
+            } else {
+                if ( ! $builder instanceof Generator) {
+                    $builder = new Generator($this, $builder, false);
+                }
+                $this->storage->set($name, $builder);
+            }
         } else {
-            throw new Exception("");
+            throw new Exception();
         }
     }
 
@@ -146,5 +170,4 @@ class Container implements ContainerInterface, Containable, Singleton, \ArrayAcc
     {
         $this->set($name, $value);
     }
-
 }

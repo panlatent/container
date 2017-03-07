@@ -10,45 +10,76 @@ namespace Panlatent\Container;
 
 class Generator
 {
+    /**
+     * @var Container
+     */
     protected $container;
 
-    protected $gen;
+    /**
+     * @var string|callable
+     */
+    protected $builder;
 
+    /**
+     * @var bool
+     */
     protected $singleton;
 
-    public function __construct(Container $container, $gen, $singleton = false)
+    public function __construct(Container $container, $builder, $singleton = false)
     {
         $this->container = $container;
-        $this->gen = $gen;
+        $this->builder = $builder;
         $this->singleton = $singleton;
-    }
-
-    public function singleton()
-    {
-        return $this->singleton;
     }
 
     public function make()
     {
-        if (is_string($this->gen)) {
-            return $this->container->injectNew($this->gen);
-        } elseif (is_callable($this->gen)) {
-            if (is_object($object = call_user_func($this->gen))) {
-                return $object;
+        if (is_string($this->builder)) {
+            return $this->container->injectNew($this->builder);
+        }
+
+        if (is_object($this->builder)) {
+            return $this->singleton ? $this->builder : clone $this->builder;
+        }
+
+        if (is_callable($this->builder)) {
+            $result = call_user_func($this->builder);
+            if (is_object($result)) {
+                return $result;
+            } elseif (is_string($result)) {
+                return $this->container->injectNew($result);
             }
         }
 
-        return false;
+        throw new Exception();
     }
 
-    public function setSingleton($singleton)
+    /**
+     * @return Container
+     */
+    public function getContainer()
     {
-        $this->singleton = $singleton;
+        return $this->container;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getBuilder()
+    {
+        return $this->builder;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isSingleton()
+    {
+        return $this->singleton;
     }
 
     public function __invoke()
     {
         return $this->make();
     }
-
 }
