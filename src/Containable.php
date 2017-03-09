@@ -1,6 +1,7 @@
 <?php
 /**
  * Container - A depend inject container
+ *
  * @author  panlatent@gmail.com
  * @link    https://github.com/panlatent/container
  * @license https://opensource.org/licenses/MIT
@@ -12,7 +13,6 @@ use Psr\Container\ContainerInterface;
 
 interface Containable extends ContainerInterface
 {
-
     /**
      * Gets an object from this container.
      *

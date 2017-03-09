@@ -8,16 +8,7 @@
 
 namespace Panlatent\Container;
 
-interface Injectable {
-    /**
-     * @return \Panlatent\Container\Containable
-     */
-    public function getContainer();
-
-    /**
-     * @param \Panlatent\Container\Containable $container
-     * @return mixed
-     */
-    public function setContainer(Containable $container);
+interface Injectable
+{
 
 }

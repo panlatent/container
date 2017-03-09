@@ -35,7 +35,7 @@ class Generator
     public function make()
     {
         if (is_string($this->builder)) {
-            return $this->container->injectNew($this->builder);
+            return $this->container->injectClass($this->builder);
         }
 
         if (is_object($this->builder)) {
@@ -47,7 +47,7 @@ class Generator
             if (is_object($result)) {
                 return $result;
             } elseif (is_string($result)) {
-                return $this->container->injectNew($result);
+                return $this->container->injectClass($result);
             }
         }
 

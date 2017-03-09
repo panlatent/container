@@ -1,6 +1,7 @@
 <?php
 /**
  * Container - A depend inject container
+ *
  * @author  panlatent@gmail.com
  * @link    https://github.com/panlatent/container
  * @license https://opensource.org/licenses/MIT
@@ -8,10 +9,9 @@
 
 namespace Panlatent\Container;
 
-use Panlatent\Boost\Storable;
 use Panlatent\Boost\Storage;
 
-class ObjectStorage extends Storage implements \ArrayAccess, \Countable, \Iterator, Storable
+class ObjectStorage extends Storage
 {
     public function set($name, $object)
     {

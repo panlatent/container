@@ -10,19 +10,22 @@
 namespace Panlatent\Container;
 
 use Panlatent\Boost\Storage;
-use Psr\Container\ContainerInterface;
+use Panlatent\Container\Injector\ClassInjector;
+use Panlatent\Container\Injector\FunctionInjector;
 
-class Container implements ContainerInterface, Containable, Singleton, \ArrayAccess, \Countable
+class Container implements Containable, Singleton, \ArrayAccess, \Countable
 {
     /**
      * @var static
      */
-    static protected $singleton;
+    protected static $singleton;
 
     /**
      * @var \Panlatent\Boost\Storage
      */
     protected $generators;
+
+    protected $injectors;
 
     /**
      * @var \Panlatent\Container\ObjectStorage
@@ -34,7 +37,10 @@ class Container implements ContainerInterface, Containable, Singleton, \ArrayAcc
      */
     public function __construct()
     {
+        static::$singleton = $this;
+
         $this->generators = new Storage();
+        $this->injectors = new Storage();
         $this->storage = new ObjectStorage();
     }
 
@@ -54,23 +60,39 @@ class Container implements ContainerInterface, Containable, Singleton, \ArrayAcc
      * @param string $class
      * @return object
      */
-    public function injectNew($class)
+    public function injectClass($class)
     {
-        $injector =  new Injector($this, $class, true);
+        $injector = new ClassInjector($this, $class);
+        $injector->setOption(ClassInjector::WITH_INTERFACE |
+            ClassInjector::WITH_SETTER |
+            ClassInjector::WITH_SETTER_ANNOTATE)
+            ->withConstructor()
+            ->withInterface(__NAMESPACE__ . '\\Injectable')
+            ->handle();
 
-        return $injector->handle();
+        return $injector->getInstance();
     }
 
-    /**
-     * @param callable $callable
-     * @param array    $params
-     * @return mixed
-     */
-    public function injectCall($callable, $params = [])
+    public function injectMethod($object, $method, $params = [])
     {
-        $injector =  new Injector($this, $callable);
+        $injector =  new ClassInjector($this, $object);
+        $injector->withoutConstructor()
+            ->handle();
 
-        return $injector->handle($params);
+        return $injector->getReturn($method, $params);
+    }
+
+    public function injectFunction($callable, $params = [])
+    {
+        $injector = new FunctionInjector($this, $callable);
+        $injector->handle();
+
+        return $injector->getReturn($params);
+    }
+
+    public function bind($className)
+    {
+
     }
 
     public function get($name)
@@ -86,6 +108,7 @@ class Container implements ContainerInterface, Containable, Singleton, \ArrayAcc
             if ($generator->isSingleton() || $object instanceof Singleton) {
                 $this->storage->set($name, $object);
             }
+
             return $object;
         }
 
@@ -134,6 +157,11 @@ class Container implements ContainerInterface, Containable, Singleton, \ArrayAcc
         } else {
             throw new Exception();
         }
+    }
+
+    public function setService($name, $builder)
+    {
+        $this->set($name, $builder, true);
     }
 
     public function count()

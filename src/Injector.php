@@ -8,133 +8,169 @@
 
 namespace Panlatent\Container;
 
-class Injector
+use Panlatent\Container\Injector\ClassInjector;
+use Panlatent\Container\Injector\FunctionInjector;
+use Psr\Container\ContainerInterface;
+
+/**
+ * Class Injector
+ *
+ * 依赖注入器使用反射器获得依赖关系并构造所需对象, 它提供了构造注入、接口注入和
+ * setter注入三种方式。
+ *
+ * @package Panlatent\Container
+ */
+abstract class Injector
 {
+    const WITH_FILE_PARAMETER_NAME = 1;
+
     /**
-     * @var Containable
+     * @var \Psr\Container\ContainerInterface
      */
     protected $container;
 
     /**
-     * @var string|object|callable
+     * @var mixed
      */
-    protected $target;
+    protected $context;
 
     /**
      * @var bool
      */
-    protected $isConstructor;
+    protected $isFindParameterName = true;
 
     /**
      * @var array
      */
-    protected $parameters = [];
+    protected $methodFormalParameterCache = [];
 
     /**
-     * @var array
+     * Injector constructor.
+     *
+     * @param \Psr\Container\ContainerInterface $container
+     * @param                                   $context
      */
-    protected $needParameterTypes = [];
-
-    /**
-     * @var array
-     */
-    protected $extraValues = [];
-
-    /**
-     * @var \ReflectionClass
-     */
-    protected $reflectionClass;
-
-    /**
-     * @var \ReflectionParameter[]
-     */
-    protected $reflectionParameters;
-
-    public function __construct(Containable $container, $target, $isConstructor = false)
+    public function __construct(ContainerInterface $container, $context)
     {
         $this->container = $container;
-        $this->target = $target;
-        $this->isConstructor = $isConstructor;
+        $this->context = $context;
+    }
 
-        if ($this->isConstructor) {
-            $this->reflectionClass = new \ReflectionClass($this->target);
-            if ($reflectionConstructor = $this->reflectionClass->getConstructor()) {
-                $this->reflectionParameters = $reflectionConstructor->getParameters();
-            }
-        } else {
-            $reflectionFunction = new \ReflectionFunction($this->target);
-            $this->reflectionParameters = $reflectionFunction->getParameters();
+    public static function bind($container, $context)
+    {
+        if (is_object($context)) {
+            return new ClassInjector($container, $context);
+        } elseif (is_callable($context)) {
+            return new FunctionInjector($container, $context);
+        } elseif (class_exists($context, true)) {
+            return new ClassInjector($container, $context);
         }
 
-        $this->getNeedParameterTypes();
+        throw new Exception('The injector cannot be bound to an object, class or function');
     }
 
-    public function handle($extras = [])
-    {
-        $this->getParameters($extras);
+    abstract public function handle();
 
-        if ($this->isConstructor) {
-            $object = $this->reflectionClass->newInstanceArgs($this->parameters);
-            if ($object instanceof Injectable) {
-                $object->setContainer($this->container);
-            }
-            return $object;
-        } else {
-            return call_user_func_array($this->target, $this->parameters);
-        }
+    public function withOption($option)
+    {
+        $this->setOption($this->getOption() | $option);
+
+        return $this;
     }
 
-    public function __invoke($extras = [])
+    public function withoutOption($option)
     {
-        return $this->handle($extras);
+        $this->setOption($this->getOption() ^ $option);
+
+        return $this;
     }
 
-    protected function getNeedParameterTypes()
+    public function getOption()
     {
-        /** @var \ReflectionParameter $parameter */
-        foreach ($this->reflectionParameters as $parameter) {
-            $pos = $parameter->getPosition();
+        return $this->isFindParameterName * static::WITH_FILE_PARAMETER_NAME;
+    }
+
+    public function setOption($option)
+    {
+        $this->isFindParameterName = (($option &
+            static::WITH_FILE_PARAMETER_NAME) ==
+            static::WITH_FILE_PARAMETER_NAME);
+
+        return $this;
+    }
+
+    /**
+     * @param \ReflectionParameter[] $parameters
+     * @return array
+     */
+    protected function getParameterTypes($parameters)
+    {
+        $types = [];
+        foreach ($parameters as $parameter) {
+            $type = [];
+            $type['pos'] = $parameter->getPosition();
+            $type['name'] = $parameter->getName();
+            $type['optional'] = $parameter->isOptional();
             if (null !== ($class = $parameter->getClass())) {
-                $this->needParameterTypes[$pos] = $class->getName();
+                $type['class'] = $class->getName();
             } else {
-                $this->needParameterTypes[$pos] = false;
+                $type['class'] = false;
             }
+            if ($type['optional']) {
+                $type['defaultValue'] = $parameter->getDefaultValue();
+            }
+            $types[] = $type;
         }
+
+        return $types;
     }
 
-    protected function getParameters($extras = [])
+    protected function getParameterDependValues($parameterTypes,
+                                          $extraParameterValues = [])
     {
-        $this->extraValues = array_reverse($extras);
-        /** @var \ReflectionParameter $parameter */
-        foreach ($this->reflectionParameters as $parameter) {
-            $pos = $parameter->getPosition();
-            if (false === ($type = $this->needParameterTypes[$pos])) {
-                $this->parameters[$pos] = $this->getParameterExtraValue($parameter);
-            } else {
-                $this->parameters[$pos] = $this->getParameterDependValue($type);
+        $values = [];
+        $extraParameterValues = array_reverse($extraParameterValues);
+        $isUseExtraParameter = false;
+        foreach ($parameterTypes as $type) {
+            $pos = $type['pos'];
+            if ($isUseExtraParameter) {
+                if (empty($extraParameterValues)) {
+                    $isUseExtraParameter = false;
+                } else {
+                    $values[$pos] = array_pop($extraParameterValues);
+                }
+            }
+
+            if ( ! $isUseExtraParameter) {
+                $values[$pos] = $this->findParameterDependValue($type['class'],
+                    $type['name']);
+                if (false === $values[$pos] && ! $type['optional']) {
+                    if (empty($extraParameterValues)) {
+                        throw new Exception("Need to provide a dependency or an extra parameter for '{$type['name']}'");
+                    } else {
+                        $isUseExtraParameter = true;
+                        $values[$pos] = array_pop($extraParameterValues);
+                    }
+                }
             }
         }
-    }
 
-    protected function getParameterExtraValue(\ReflectionParameter $parameter)
-    {
-        if (empty($this->extraValues)) {
-            if ($parameter->isOptional()) {
-                return $parameter->getDefaultValue();
-            } else {
-                throw new Exception("");
-            }
-        } else {
-            return array_pop($extras);
-        }
-    }
-
-    protected function getParameterDependValue($className)
-    {
-        if (false === ($object = $this->container->get($className))) {
-            throw new Exception("");
+        if ( ! empty($extraParameters)) {
+            throw new Exception("Too many extra parameters");
         }
 
-        return $object;
+        return $values;
+    }
+
+    protected function findParameterDependValue($dependClass, $dependName)
+    {
+        if ($dependClass && $this->container->has($dependClass)) {
+            return $this->container->get($dependClass);
+        } elseif ($this->isFindParameterName
+            && $this->container->has($dependName)) {
+            return $this->container->get($dependName);
+        }
+
+        return false;
     }
 }
