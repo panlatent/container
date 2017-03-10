@@ -14,31 +14,84 @@ use Psr\Container\ContainerInterface;
 use ReflectionClass;
 use ReflectionMethod;
 
+/**
+ * Class ClassInjector
+ *
+ * @package Panlatent\Container\Injector
+ */
 class ClassInjector extends Injector
 {
+    /**
+     * 使用构造注入(如果存在构造函数)
+     */
     const WITH_CONSTRUCTOR = 128;
+
+    /**
+     * 使用接口注入
+     */
     const WITH_INTERFACE = 256;
+
+    /**
+     * 使用Setter注入
+     */
     const WITH_SETTER = 512;
+
+    /**
+     * 使用注解方式注入Setter
+     */
     const WITH_SETTER_ANNOTATE = 1024;
 
+    /**
+     * @var \ReflectionClass
+     */
     protected $class;
 
+    /**
+     * @var object|null
+     */
     protected $instance;
 
+    /**
+     * @var array
+     */
     protected $parameterTypeCache = [];
 
+    /**
+     * @var array
+     */
     protected $interfaces = [];
 
+    /**
+     * @var array
+     */
     protected $setters = [];
 
+    /**
+     * @var bool
+     */
     protected $isConstructor;
 
+    /**
+     * @var bool
+     */
     protected $isInterface;
 
+    /**
+     * @var bool
+     */
     protected $isSetter;
 
+    /**
+     * @var bool
+     */
     protected $isSetterAnnotate;
 
+    /**
+     * ClassInjector constructor.
+     *
+     * @param \Psr\Container\ContainerInterface $container
+     * @param                                   $context
+     */
     public function __construct(ContainerInterface $container, $context)
     {
         parent::__construct($container, $context);
@@ -50,6 +103,9 @@ class ClassInjector extends Injector
         $this->withOption(static::WITH_CONSTRUCTOR);
     }
 
+    /**
+     * @return $this
+     */
     public function withConstructor()
     {
         $this->isConstructor = true;
@@ -57,6 +113,9 @@ class ClassInjector extends Injector
         return $this;
     }
 
+    /**
+     * @return $this
+     */
     public function withoutConstructor()
     {
         $this->isConstructor = false;
@@ -64,6 +123,10 @@ class ClassInjector extends Injector
         return $this;
     }
 
+    /**
+     * @param $name
+     * @return $this
+     */
     public function withInterface($name)
     {
         if( ! array_search($name, $this->interfaces)) {
@@ -73,6 +136,10 @@ class ClassInjector extends Injector
         return $this;
     }
 
+    /**
+     * @param $names
+     * @return $this
+     */
     public function withInterfaces($names)
     {
         $this->interfaces = array_merge($this->interfaces, $names);
@@ -80,6 +147,10 @@ class ClassInjector extends Injector
         return $this;
     }
 
+    /**
+     * @param $name
+     * @return $this
+     */
     public function withSetter($name)
     {
         if ( ! array_search($name, $this->setters)) {
@@ -89,6 +160,10 @@ class ClassInjector extends Injector
         return $this;
     }
 
+    /**
+     * @param $names
+     * @return $this
+     */
     public function withSetters($names)
     {
         $this->setters = array_merge($this->setters, $names);
@@ -96,6 +171,9 @@ class ClassInjector extends Injector
         return $this;
     }
 
+    /**
+     * @return int
+     */
     public function getOption()
     {
         return parent::getOption() |
@@ -125,6 +203,9 @@ class ClassInjector extends Injector
         return $this;
     }
 
+    /**
+     *
+     */
     public function handle()
     {
         if ( ! is_object($this->context)) {
@@ -148,11 +229,19 @@ class ClassInjector extends Injector
         }
     }
 
+    /**
+     * @return mixed
+     */
     public function getInstance()
     {
         return $this->instance;
     }
 
+    /**
+     * @param       $name
+     * @param array $extraParameterValues
+     * @return mixed
+     */
     public function getReturn($name, $extraParameterValues = [])
     {
         if ( ! isset($this->parameterTypeCache[$name])) {
@@ -167,6 +256,9 @@ class ClassInjector extends Injector
         return call_user_func_array([$this->instance, $name], $dependValues);
     }
 
+    /**
+     *
+     */
     protected function injectConstructor()
     {
         $parameterTypes = $this->getConstructorParameterTypes();
@@ -180,6 +272,9 @@ class ClassInjector extends Injector
         }
     }
 
+    /**
+     * @param \ReflectionClass $interface
+     */
     protected function injectInterface(ReflectionClass $interface)
     {
         $methods = $interface->getMethods(ReflectionMethod::IS_PUBLIC);
@@ -189,11 +284,19 @@ class ClassInjector extends Injector
         }
     }
 
+    /**
+     *
+     */
     protected function injectSetter()
     {
         // @TODO
     }
 
+    /**
+     * @param \ReflectionMethod $method
+     * @param array             $extraParameterValues
+     * @return mixed
+     */
     protected function injectMethod(ReflectionMethod $method,
                                     $extraParameterValues = [])
     {
@@ -230,11 +333,17 @@ class ClassInjector extends Injector
         return $passInterfaces;
     }
 
+    /**
+     *
+     */
     protected function filterSetters()
     {
 
     }
 
+    /**
+     * @return array|bool
+     */
     protected function getConstructorParameterTypes()
     {
         if ( ! ($constructor = $this->class->getConstructor())) {
