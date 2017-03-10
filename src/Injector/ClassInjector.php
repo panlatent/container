@@ -12,6 +12,7 @@ namespace Panlatent\Container\Injector;
 use Panlatent\Container\Injector;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
+use ReflectionMethod;
 
 class ClassInjector extends Injector
 {
@@ -135,7 +136,11 @@ class ClassInjector extends Injector
         }
 
         if ($this->isInterface) {
-            $this->injectInterface();
+            $interfaces = $this->class->getInterfaces();
+            $interfaces = $this->filterInterfaces($interfaces);
+            foreach ($interfaces as $interface) {
+                $this->injectInterface($interface);
+            }
         }
 
         if ($this->isSetter) {
@@ -151,23 +156,14 @@ class ClassInjector extends Injector
     public function getReturn($name, $extraParameterValues = [])
     {
         if ( ! isset($this->parameterTypeCache[$name])) {
-            $method = $this->class->getMethod($name);
-            if ( ! ($parameters = $method->getParameters())) {
-                $this->parameterTypeCache[$name] = false;
-
-                return call_user_func([$this->instance, $name]);
-            }
-
-            $parameterTypes = $this->getParameterTypes($parameters);
-            $this->parameterTypeCache[$name] = $parameterTypes;
+            return $this->injectMethod($this->class->getMethod($name));
         } elseif ( ! $this->parameterTypeCache[$name]) {
             return call_user_func([$this->instance, $name]);
-        } else {
-            $parameterTypes = $this->parameterTypeCache[$name];
         }
+
+        $parameterTypes = $this->parameterTypeCache[$name];
         $dependValues = $this->getParameterDependValues($parameterTypes,
             $extraParameterValues);
-
         return call_user_func_array([$this->instance, $name], $dependValues);
     }
 
@@ -184,9 +180,13 @@ class ClassInjector extends Injector
         }
     }
 
-    protected function injectInterface()
+    protected function injectInterface(ReflectionClass $interface)
     {
-        // @TODO
+        $methods = $interface->getMethods(ReflectionMethod::IS_PUBLIC);
+        foreach ($methods as $method) {
+            $method = $this->class->getMethod($method->getName());
+            $this->injectMethod($method);
+        }
     }
 
     protected function injectSetter()
@@ -194,13 +194,52 @@ class ClassInjector extends Injector
         // @TODO
     }
 
+    protected function injectMethod(ReflectionMethod $method,
+                                    $extraParameterValues = [])
+    {
+        if ( ! ($parameters = $method->getParameters())) {
+            $this->parameterTypeCache[$method->getName()] = false;
+
+            return $method->invoke($this->instance);
+        }
+
+        $parameterTypes = $this->getParameterTypes($parameters);
+        $this->parameterTypeCache[$method->getName()] = $parameterTypes;
+        $dependValues = $this->getParameterDependValues($parameterTypes,
+            $extraParameterValues);
+
+        return $method->invokeArgs($this->instance, $dependValues);
+    }
+
+    /**
+     * @param \ReflectionClass[] $interfaces
+     * @return array
+     */
+    protected function filterInterfaces($interfaces)
+    {
+        $passInterfaces = [];
+        foreach ($interfaces as $interface) {
+            foreach ($this->interfaces as $allowInterface) {
+                if ($interface->getName() === $allowInterface ||
+                    $interface->isSubclassOf($allowInterface)) {
+                    $passInterfaces[] =  $interface;
+                }
+            }
+        }
+
+        return $passInterfaces;
+    }
+
+    protected function filterSetters()
+    {
+
+    }
+
     protected function getConstructorParameterTypes()
     {
         if ( ! ($constructor = $this->class->getConstructor())) {
             return false;
-        }
-
-        if ( ! ($parameters = $constructor->getParameters())) {
+        } elseif ( ! ($parameters = $constructor->getParameters())) {
             return [];
         }
 
