@@ -67,7 +67,7 @@ class Container implements Containable, Singleton, \ArrayAccess, \Countable
             ClassInjector::WITH_SETTER |
             ClassInjector::WITH_SETTER_ANNOTATE)
             ->withConstructor()
-            ->withInterface(__NAMESPACE__ . '\\Injectable')
+            ->withInterface(Injectable::class)
             ->handle();
 
         return $injector->getInstance();
