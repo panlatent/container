@@ -24,26 +24,26 @@ Or，Add to composer.json and run ```composer install``` or ```composer update``
 
 可以使用选项定制或者关闭一些特性。
 
-0. Container
+0.Container
 
 使用 ```Container::set($name, $builder, $singleton = false)``` 方法向容器添加一个依赖关系。
 使用 ```Container::get($name)``` 方法从容器中获取一个对象，它的依赖关系必须已经被添加到容器中。
 
-1. Constructor Inject
+1.Constructor Inject
 
 可以使用 ```Container::injectClass($className)``` 方法手动实例化一个类，该方法会从容器装
 配构造函数所需要的依赖。
 
-2. Interface Inject
+2.Interface Inject
 
 在从容器创建时，容器会自动向实现了Injectable及其子接口的类中注入依赖对象。
 
-3. Setter Inject
+3.Setter Inject
 
 在从容器创建时，容器会自动向实现用户指定的setter方法注入依赖对象，也可以自动注入使用PHPDoc注释
 标注的方法。
 
-4. Method/Function Inject
+4.Method/Function Inject
 
 可以使用 ```Container::injectMethod($object, $method, $params = []) ``` 方法调用一个
 方法, 该方法会从容器装配调用时所需要的依赖。
