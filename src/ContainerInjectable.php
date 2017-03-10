@@ -11,6 +11,14 @@ namespace Panlatent\Container;
 
 use Psr\Container\ContainerInterface;
 
+/**
+ * Interface ContainerInjectable
+ *
+ * 实现了该接口的类可在实例化是自动注入容器组件对。该接口继承了Injectable接口，使用接口注入的
+ * 方式获得依赖对象。
+ *
+ * @package Panlatent\Container
+ */
 interface ContainerInjectable extends Injectable
 {
     /**

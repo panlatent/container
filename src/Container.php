@@ -13,6 +13,11 @@ use Panlatent\Boost\Storage;
 use Panlatent\Container\Injector\ClassInjector;
 use Panlatent\Container\Injector\FunctionInjector;
 
+/**
+ * Class Container
+ *
+ * @package Panlatent\Container
+ */
 class Container implements Containable, Singleton, \ArrayAccess, \Countable
 {
     /**
@@ -25,6 +30,9 @@ class Container implements Containable, Singleton, \ArrayAccess, \Countable
      */
     protected $generators;
 
+    /**
+     * @var \Panlatent\Boost\Storage
+     */
     protected $injectors;
 
     /**
@@ -73,6 +81,12 @@ class Container implements Containable, Singleton, \ArrayAccess, \Countable
         return $injector->getInstance();
     }
 
+    /**
+     * @param       $object
+     * @param       $method
+     * @param array $params
+     * @return mixed
+     */
     public function injectMethod($object, $method, $params = [])
     {
         $injector =  new ClassInjector($this, $object);
@@ -82,6 +96,11 @@ class Container implements Containable, Singleton, \ArrayAccess, \Countable
         return $injector->getReturn($method, $params);
     }
 
+    /**
+     * @param       $callable
+     * @param array $params
+     * @return mixed
+     */
     public function injectFunction($callable, $params = [])
     {
         $injector = new FunctionInjector($this, $callable);
@@ -90,11 +109,19 @@ class Container implements Containable, Singleton, \ArrayAccess, \Countable
         return $injector->getReturn($params);
     }
 
+    /**
+     * @param $className
+     */
     public function bind($className)
     {
 
     }
 
+    /**
+     * @param string $name
+     * @return callable|mixed|object|string
+     * @throws \Panlatent\Container\NotFoundException
+     */
     public function get($name)
     {
         if ($this->storage->has($name)) {
@@ -115,6 +142,10 @@ class Container implements Containable, Singleton, \ArrayAccess, \Countable
         throw new NotFoundException("Not found $name");
     }
 
+    /**
+     * @param string $name
+     * @return bool
+     */
     public function has($name)
     {
         if ( ! $this->storage->has($name) && ! $this->generators->has($name)) {
@@ -124,6 +155,10 @@ class Container implements Containable, Singleton, \ArrayAccess, \Countable
         }
     }
 
+    /**
+     * @param string $name
+     * @throws \Panlatent\Container\Exception
+     */
     public function remove($name)
     {
         $removed = false;
@@ -141,6 +176,12 @@ class Container implements Containable, Singleton, \ArrayAccess, \Countable
         }
     }
 
+    /**
+     * @param string                 $name
+     * @param callable|object|string $builder
+     * @param bool                   $singleton
+     * @throws \Panlatent\Container\Exception
+     */
     public function set($name, $builder, $singleton = false)
     {
         if (is_string($builder) || is_callable($builder)) {
@@ -159,41 +200,71 @@ class Container implements Containable, Singleton, \ArrayAccess, \Countable
         }
     }
 
+    /**
+     * @param $name
+     * @param $builder
+     */
     public function setService($name, $builder)
     {
         $this->set($name, $builder, true);
     }
 
+    /**
+     * @return int
+     */
     public function count()
     {
         return count($this->storage);
     }
 
+    /**
+     * @param mixed $offset
+     * @return callable|mixed|object|string
+     */
     public function offsetGet($offset)
     {
         return $this->get($offset);
     }
 
+    /**
+     * @param mixed $offset
+     * @return bool
+     */
     public function offsetExists($offset)
     {
         return $this->has($offset);
     }
 
+    /**
+     * @param mixed $offset
+     * @param mixed $value
+     */
     public function offsetSet($offset, $value)
     {
         return $this->set($offset, $value);
     }
 
+    /**
+     * @param mixed $offset
+     */
     public function offsetUnset($offset)
     {
         $this->remove($offset);
     }
 
+    /**
+     * @param $name
+     * @return callable|mixed|object|string
+     */
     public function __get($name)
     {
         return $this->get($name);
     }
 
+    /**
+     * @param $name
+     * @param $value
+     */
     public function __set($name, $value)
     {
         $this->set($name, $value);

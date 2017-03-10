@@ -8,6 +8,13 @@
 
 namespace Panlatent\Container;
 
+/**
+ * Class Generator
+ *
+ * 生成器是对依赖关系的一个包装类。根据不同结构的依赖关系，创建所需要的依赖对象。
+ *
+ * @package Panlatent\Container
+ */
 class Generator
 {
     /**
@@ -25,6 +32,13 @@ class Generator
      */
     protected $singleton;
 
+    /**
+     * Generator constructor.
+     *
+     * @param \Panlatent\Container\Container $container
+     * @param                                $builder
+     * @param bool                           $singleton
+     */
     public function __construct(Container $container, $builder, $singleton = false)
     {
         $this->container = $container;
@@ -32,6 +46,10 @@ class Generator
         $this->singleton = $singleton;
     }
 
+    /**
+     * @return callable|mixed|object|string
+     * @throws \Panlatent\Container\Exception
+     */
     public function make()
     {
         if (is_string($this->builder)) {
@@ -78,6 +96,9 @@ class Generator
         return $this->singleton;
     }
 
+    /**
+     * @return callable|mixed|object|string
+     */
     public function __invoke()
     {
         return $this->make();

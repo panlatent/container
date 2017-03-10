@@ -11,6 +11,11 @@ namespace Panlatent\Container;
 
 use Psr\Container\NotFoundExceptionInterface;
 
+/**
+ * Class NotFoundException
+ *
+ * @package Panlatent\Container
+ */
 class NotFoundException extends Exception implements NotFoundExceptionInterface
 {
 

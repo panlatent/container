@@ -11,8 +11,18 @@ namespace Panlatent\Container;
 
 use Panlatent\Boost\Storage;
 
+/**
+ * Class ObjectStorage
+ *
+ * @package Panlatent\Container
+ */
 class ObjectStorage extends Storage
 {
+    /**
+     * @param $name
+     * @param $object
+     * @throws \Panlatent\Container\Exception
+     */
     public function set($name, $object)
     {
         if ( ! is_object($object)) {
@@ -22,6 +32,10 @@ class ObjectStorage extends Storage
         $this->storage[$name] = $object;
     }
 
+    /**
+     * @param $className
+     * @return bool
+     */
     public function find($className)
     {
         foreach ($this->storage as $object) {
@@ -33,6 +47,10 @@ class ObjectStorage extends Storage
         return false;
     }
 
+    /**
+     * @param $className
+     * @return bool
+     */
     public function findInstanceOf($className)
     {
         foreach ($this->storage as $object) {

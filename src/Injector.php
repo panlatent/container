@@ -22,7 +22,10 @@ use Psr\Container\ContainerInterface;
  */
 abstract class Injector
 {
-    const WITH_FILE_PARAMETER_NAME = 1;
+    /**
+     * 找不到类依赖的情况下, 使用参数名查找依赖
+     */
+    const WITH_FIND_PARAMETER_NAME = 1;
 
     /**
      * @var \Psr\Container\ContainerInterface
@@ -40,11 +43,6 @@ abstract class Injector
     protected $isFindParameterName = true;
 
     /**
-     * @var array
-     */
-    protected $methodFormalParameterCache = [];
-
-    /**
      * Injector constructor.
      *
      * @param \Psr\Container\ContainerInterface $container
@@ -56,6 +54,12 @@ abstract class Injector
         $this->context = $context;
     }
 
+    /**
+     * @param $container
+     * @param $context
+     * @return \Panlatent\Container\Injector\ClassInjector|\Panlatent\Container\Injector\FunctionInjector
+     * @throws \Panlatent\Container\Exception
+     */
     public static function bind($container, $context)
     {
         if (is_object($context)) {
@@ -69,8 +73,15 @@ abstract class Injector
         throw new Exception('The injector cannot be bound to an object, class or function');
     }
 
+    /**
+     * @return mixed
+     */
     abstract public function handle();
 
+    /**
+     * @param $option
+     * @return $this
+     */
     public function withOption($option)
     {
         $this->setOption($this->getOption() | $option);
@@ -78,6 +89,10 @@ abstract class Injector
         return $this;
     }
 
+    /**
+     * @param $option
+     * @return $this
+     */
     public function withoutOption($option)
     {
         $this->setOption($this->getOption() ^ $option);
@@ -85,16 +100,23 @@ abstract class Injector
         return $this;
     }
 
+    /**
+     * @return bool
+     */
     public function getOption()
     {
-        return $this->isFindParameterName * static::WITH_FILE_PARAMETER_NAME;
+        return $this->isFindParameterName * static::WITH_FIND_PARAMETER_NAME;
     }
 
+    /**
+     * @param $option
+     * @return $this
+     */
     public function setOption($option)
     {
         $this->isFindParameterName = (($option &
-            static::WITH_FILE_PARAMETER_NAME) ==
-            static::WITH_FILE_PARAMETER_NAME);
+            static::WITH_FIND_PARAMETER_NAME) ==
+            static::WITH_FIND_PARAMETER_NAME);
 
         return $this;
     }
@@ -125,8 +147,14 @@ abstract class Injector
         return $types;
     }
 
+    /**
+     * @param       $parameterTypes
+     * @param array $extraParameterValues
+     * @return array
+     * @throws \Panlatent\Container\Exception
+     */
     protected function getParameterDependValues($parameterTypes,
-                                          $extraParameterValues = [])
+                                                $extraParameterValues = [])
     {
         $values = [];
         $extraParameterValues = array_reverse($extraParameterValues);
@@ -162,6 +190,11 @@ abstract class Injector
         return $values;
     }
 
+    /**
+     * @param $dependClass
+     * @param $dependName
+     * @return bool|mixed
+     */
     protected function findParameterDependValue($dependClass, $dependName)
     {
         if ($dependClass && $this->container->has($dependClass)) {

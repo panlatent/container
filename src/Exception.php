@@ -10,6 +10,11 @@ namespace Panlatent\Container;
 
 use Psr\Container\ContainerExceptionInterface;
 
+/**
+ * Class Exception
+ *
+ * @package Panlatent\Container
+ */
 class Exception extends \Exception implements ContainerExceptionInterface
 {
 

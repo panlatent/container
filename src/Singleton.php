@@ -8,14 +8,17 @@
 
 namespace Panlatent\Container;
 
+/**
+ * Interface Singleton
+ *
+ * @package Panlatent\Container
+ */
 interface Singleton
 {
-
     /**
      * Return a singleton object.
      *
      * @return static
      */
     public static function singleton();
-
 }
