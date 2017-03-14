@@ -226,7 +226,7 @@ class ClassInjector extends Injector
 
         if ($this->isInterface) {
             $interfaces = $this->class->getInterfaces();
-            $interfaces = $this->filterInterfaces($interfaces);
+            $interfaces = array_filter($interfaces, [$this, 'filterInterface']);
             foreach ($interfaces as $interface) {
                 $this->injectInterface($interface);
             }
@@ -328,22 +328,19 @@ class ClassInjector extends Injector
     }
 
     /**
-     * @param \ReflectionClass[] $interfaces
-     * @return array
+     * @param \ReflectionClass $interface
+     * @return bool
      */
-    protected function filterInterfaces($interfaces)
+    protected function filterInterface($interface)
     {
-        $passInterfaces = [];
-        foreach ($interfaces as $interface) {
-            foreach ($this->interfaces as $allowInterface) {
-                if ($interface->getName() === $allowInterface ||
-                    $interface->isSubclassOf($allowInterface)) {
-                    $passInterfaces[] =  $interface;
-                }
+        foreach ($this->interfaces as $allowInterface) {
+            if ($interface->getName() === $allowInterface ||
+                $interface->isSubclassOf($allowInterface)) {
+                return true;
             }
         }
 
-        return $passInterfaces;
+        return false;
     }
 
     /**
