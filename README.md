@@ -41,7 +41,7 @@ Or，Add to composer.json and run ```composer install``` or ```composer update``
 3.Setter Inject
 
 在从容器创建时，容器会自动向实现用户指定的setter方法注入依赖对象，也可以自动注入使用PHPDoc注释
-标注的方法。
+标注的方法(@inject)。
 
 4.Method/Function Inject
 

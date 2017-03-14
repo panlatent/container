@@ -9,6 +9,7 @@
 
 namespace Panlatent\Container\Injector;
 
+use Panlatent\Annotation\Annotation;
 use Panlatent\Container\Injector;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
@@ -40,6 +41,13 @@ class ClassInjector extends Injector
      * 使用注解方式注入Setter
      */
     const WITH_SETTER_ANNOTATE = 1024;
+
+    /**
+     * 使用注解方式声明Setter时的关键字
+     *
+     * 在PHPDoc风格的注视中使用 @inject 可实现自动注入
+     */
+    const SETTER_ANNOTATION_NAME = 'inject';
 
     /**
      * @var \ReflectionClass
@@ -225,7 +233,11 @@ class ClassInjector extends Injector
         }
 
         if ($this->isSetter) {
-            $this->injectSetter();
+            $methods = $this->class->getMethods(ReflectionMethod::IS_PUBLIC);
+            $methods = array_filter($methods, [$this, 'filterSetter']);
+            foreach ($methods as $method) {
+                $this->injectSetter($method);
+            }
         }
     }
 
@@ -285,11 +297,12 @@ class ClassInjector extends Injector
     }
 
     /**
-     *
+     * @param \ReflectionMethod $method
      */
-    protected function injectSetter()
+    protected function injectSetter(ReflectionMethod $method)
     {
-        // @TODO
+        // @TODO 没有实现依赖PHPDoc声明所需依赖
+        $this->injectMethod($method);
     }
 
     /**
@@ -334,11 +347,27 @@ class ClassInjector extends Injector
     }
 
     /**
-     *
+     * @param \ReflectionMethod $method
+     * @return bool
      */
-    protected function filterSetters()
+    protected function filterSetter($method)
     {
+        if ( ! in_array($method->getName(), $this->setters)) {
+            if ( ! $this->isSetterAnnotate) {
+                return false;
+            } else {
+                if ( ! ($docComment = $method->getDocComment())) {
+                    return false;
+                } else {
+                    $annotation = new Annotation($docComment);
+                    if ( ! $annotation->has(static::SETTER_ANNOTATION_NAME)) {
+                        return false;
+                    }
+                }
+            }
+        }
 
+        return true;
     }
 
     /**
