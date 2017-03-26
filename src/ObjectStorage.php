@@ -19,22 +19,8 @@ use Panlatent\Boost\Storage;
 class ObjectStorage extends Storage
 {
     /**
-     * @param $name
-     * @param $object
-     * @throws \Panlatent\Container\Exception
-     */
-    public function set($name, $object)
-    {
-        if ( ! is_object($object)) {
-            throw new Exception("");
-        }
-
-        $this->storage[$name] = $object;
-    }
-
-    /**
-     * @param $className
-     * @return bool
+     * @param string $className
+     * @return object|bool
      */
     public function find($className)
     {
@@ -48,8 +34,8 @@ class ObjectStorage extends Storage
     }
 
     /**
-     * @param $className
-     * @return bool
+     * @param string $className
+     * @return object|bool
      */
     public function findInstanceOf($className)
     {
@@ -60,5 +46,19 @@ class ObjectStorage extends Storage
         }
 
         return false;
+    }
+
+    /**
+     * @param string $name
+     * @param object $object
+     * @throws \Panlatent\Container\Exception
+     */
+    public function set($name, $object)
+    {
+        if ( ! is_object($object)) {
+            throw new Exception("");
+        }
+
+        $this->storage[$name] = $object;
     }
 }
