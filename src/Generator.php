@@ -8,6 +8,8 @@
 
 namespace Panlatent\Container;
 
+use Closure;
+
 /**
  * Class Generator
  *
@@ -56,7 +58,7 @@ class Generator
             return $this->container->injectClass($this->builder);
         }
 
-        if (is_object($this->builder)) {
+        if (is_object($this->builder) && ! $this->builder instanceof Closure) {
             return $this->singleton ? $this->builder : clone $this->builder;
         }
 
