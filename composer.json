@@ -13,7 +13,7 @@
   "require": {
     "php": ">=5.5",
     "psr/container": "~1.0",
-    "panlatent/boost": "~2.0"
+    "panlatent/boost": "~0.2"
   },
   "require-dev": {
     "phpunit/phpunit": "~4.0"
