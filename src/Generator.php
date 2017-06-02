@@ -63,7 +63,7 @@ class Generator
         }
 
         if (is_callable($this->builder)) {
-            $result = call_user_func($this->builder);
+            $result = $this->container->injectFunction($this->builder);
             if (is_object($result)) {
                 return $result;
             } elseif (is_string($result)) {
