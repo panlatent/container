@@ -9,204 +9,124 @@
 
 namespace Panlatent\Container;
 
-use Panlatent\Boost\Storage;
-use Panlatent\Container\Injector\ClassInjector;
-use Panlatent\Container\Injector\FunctionInjector;
+use ArrayAccess;
+use Countable;
+use Panlatent\Container\Resolve\ClassResolve;
+use Panlatent\Container\Resolve\FunctionResolve;
 
 /**
  * Class Container
  *
  * @package Panlatent\Container
  */
-class Container implements Containable, Singleton, \ArrayAccess, \Countable
+class Container implements Containable, ArrayAccess, Countable
 {
     /**
-     * @var static
+     * @var array
      */
-    protected static $singleton;
-
+    protected $relationships = [];
     /**
-     * @var \Panlatent\Boost\Storage
+     * @var Injector
      */
-    protected $generators;
-
+    protected $injector;
     /**
-     * @var \Panlatent\Boost\Storage
+     * @var array|Builder[]
      */
-    protected $injectors;
-
-    /**
-     * @var \Panlatent\Container\ObjectStorage
-     */
-    protected $storage;
+    protected $elements = [];
 
     /**
      * Container constructor.
      */
     public function __construct()
     {
-        static::$singleton = $this;
-
-        $this->generators = new Storage();
-        $this->injectors = new Storage();
-        $this->storage = new ObjectStorage();
-    }
-
-    /**
-     * @return \Panlatent\Container\Container
-     */
-    public static function singleton()
-    {
-        if (null === static::$singleton) {
-            static::$singleton = new static();
-        }
-
-        return static::$singleton;
+        $this->injector = new Injector($this);
     }
 
     /**
      * @param string $class
+     * @param array  $rearParams
      * @return object
+     * @throws NotFoundException
+     * @throws ResolveException
      */
-    public function injectClass($class)
+    public function new(string $class, array $tailParams = [])
     {
-        $injector = new ClassInjector($this, $class);
-        $injector->setOption(ClassInjector::WITH_INTERFACE |
-            ClassInjector::WITH_SETTER |
-            ClassInjector::WITH_SETTER_ANNOTATE)
-            ->withConstructor()
-            ->withInterface(Injectable::class)
-            ->handle();
+        $resolve = new ClassResolve($class);
+        $params = $this->injector->make($resolve);
+        $params = array_merge($params, $tailParams);
 
-        return $injector->getInstance();
+        return $resolve->getInstance($params);
     }
 
     /**
-     * @param       $object
-     * @param       $method
-     * @param array $params
+     * @param callable $callable
+     * @param array    $frontParams
      * @return mixed
+     * @throws NotFoundException
      */
-    public function injectMethod($object, $method, $params = [])
+    public function call(callable $callable, array $frontParams = [])
     {
-        $injector =  new ClassInjector($this, $object);
-        $injector->withoutConstructor()
-            ->handle();
+        $resolve = new FunctionResolve($callable);
+        $params = $this->injector->make($resolve);
+        $params = array_merge($frontParams, $params);
 
-        return $injector->getReturn($method, $params);
+        return $resolve->getReturn($params);
     }
 
     /**
-     * @param       $callable
-     * @param array $params
-     * @return mixed
-     */
-    public function injectFunction($callable, $params = [])
-    {
-        $injector = new FunctionInjector($this, $callable);
-        $injector->handle();
-
-        return $injector->getReturn($params);
-    }
-
-    /**
-     * @param $className
-     */
-    public function bind($className)
-    {
-
-    }
-
-    /**
+     * Gets a depend from the container.
+     *
      * @param string $name
      * @return callable|mixed|object|string
      * @throws \Panlatent\Container\NotFoundException
      */
     public function get($name)
     {
-        if ($this->storage->has($name)) {
-            return $this->storage->get($name);
-        } elseif ($this->generators->has($name)) {
-            /** @var \Panlatent\Container\Generator $generator */
-            $generator = $this->generators->get($name);
-            if ( ! ($object = $generator->make())) {
-                throw new NotFoundException("Not found $name");
-            }
-            if ($generator->isSingleton() || $object instanceof Singleton) {
-                $this->storage->set($name, $object);
-            }
-
-            return $object;
+        if (! isset($this->elements[$name])) {
+            throw new NotFoundException("Not found object: $name");
         }
 
-        throw new NotFoundException("Not found $name");
+        return $this->elements[$name]->build($this->injector);
     }
 
     /**
+     * Returns a bool TRUE that the name in the container,
+     * otherwise it does not exist.
+     *
      * @param string $name
      * @return bool
      */
     public function has($name)
     {
-        if ( ! $this->storage->has($name) && ! $this->generators->has($name)) {
-            return false;
-        } else {
-            return true;
-        }
+        return isset($this->elements[$name]);
     }
 
     /**
+     * Remove a container object or definition.
+     *
      * @param string $name
      * @throws \Panlatent\Container\Exception
      */
     public function remove($name)
     {
-        $removed = false;
-        if ($this->storage->has($name)) {
-            $this->storage->destroy($name);
-            $removed = true;
+        if (! isset($this->elements[$name])) {
+            throw new Exception("Not exists container element: $name");
         }
-        if ($this->generators->has($name)) {
-            $this->generators->destroy($name);
-            $removed = true;
-        }
-
-        if ( ! $removed) {
-            throw new Exception();
-        }
+        unset($this->elements[$name]);
     }
 
     /**
-     * @param string                 $name
-     * @param callable|object|string $builder
-     * @param bool                   $singleton
-     * @throws \Panlatent\Container\Exception
+     * Sets a depend object definition to container.
+     *
+     * @param string $name
+     * @param mixed  $definition
+     * @param bool   $singleton
      */
-    public function set($name, $builder, $singleton = false)
+    public function set($name, $definition, $singleton = false)
     {
-        if (is_string($builder) || is_callable($builder)) {
-            $this->generators->set($name, new Generator($this, $builder, $singleton));
-        } elseif (is_object($builder)) {
-            if ($singleton) {
-                $this->storage->set($name, $builder);
-            } else {
-                if ( ! $builder instanceof Generator) {
-                    $builder = new Generator($this, $builder, false);
-                }
-                $this->storage->set($name, $builder);
-            }
-        } else {
-            throw new Exception();
-        }
-    }
-
-    /**
-     * @param $name
-     * @param $builder
-     */
-    public function setService($name, $builder)
-    {
-        $this->set($name, $builder, true);
+        $builder = new Builder($definition);
+        $builder->setSingleton($singleton);
+        $this->elements[$name] = $builder;
     }
 
     /**
@@ -214,12 +134,12 @@ class Container implements Containable, Singleton, \ArrayAccess, \Countable
      */
     public function count()
     {
-        return count($this->storage);
+        return count($this->elements);
     }
 
     /**
-     * @param mixed $offset
-     * @return callable|mixed|object|string
+     * @param string $offset
+     * @return mixed
      */
     public function offsetGet($offset)
     {
@@ -227,7 +147,7 @@ class Container implements Containable, Singleton, \ArrayAccess, \Countable
     }
 
     /**
-     * @param mixed $offset
+     * @param string $offset
      * @return bool
      */
     public function offsetExists($offset)
@@ -236,8 +156,8 @@ class Container implements Containable, Singleton, \ArrayAccess, \Countable
     }
 
     /**
-     * @param mixed $offset
-     * @param mixed $value
+     * @param string $offset
+     * @param mixed  $value
      */
     public function offsetSet($offset, $value)
     {
@@ -245,7 +165,7 @@ class Container implements Containable, Singleton, \ArrayAccess, \Countable
     }
 
     /**
-     * @param mixed $offset
+     * @param string $offset
      */
     public function offsetUnset($offset)
     {
@@ -253,8 +173,8 @@ class Container implements Containable, Singleton, \ArrayAccess, \Countable
     }
 
     /**
-     * @param $name
-     * @return callable|mixed|object|string
+     * @param string $name
+     * @return mixed
      */
     public function __get($name)
     {
@@ -262,8 +182,8 @@ class Container implements Containable, Singleton, \ArrayAccess, \Countable
     }
 
     /**
-     * @param $name
-     * @param $value
+     * @param string $name
+     * @param mixed  $value
      */
     public function __set($name, $value)
     {

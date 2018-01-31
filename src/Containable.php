@@ -46,5 +46,4 @@ interface Containable extends ContainerInterface
      * @return void
      */
     public function remove($name);
-
 }

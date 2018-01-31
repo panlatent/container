@@ -7,9 +7,9 @@
  * @license https://opensource.org/licenses/MIT
  */
 
-namespace Tests\_data;
+namespace Panlatent\Container;
 
-class Plant
+class ResolveException extends Exception
 {
 
 }
