@@ -84,6 +84,16 @@ class Container implements Containable, ArrayAccess, Countable
     }
 
     /**
+     * @param Resolve $resolve
+     * @return mixed
+     * @throws NotFoundException
+     */
+    public function make(Resolve $resolve)
+    {
+        return $this->injector->make($resolve);
+    }
+
+    /**
      * Gets a depend from the container.
      *
      * @param string $name
