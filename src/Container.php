@@ -10,9 +10,12 @@
 namespace Panlatent\Container;
 
 use ArrayAccess;
+use Closure;
 use Countable;
+use InvalidArgumentException;
 use Panlatent\Container\Resolve\ClassResolve;
 use Panlatent\Container\Resolve\FunctionResolve;
+use Panlatent\Container\Resolve\MethodResolve;
 
 /**
  * Class Container
@@ -44,7 +47,7 @@ class Container implements Containable, ArrayAccess, Countable
 
     /**
      * @param string $class
-     * @param array  $rearParams
+     * @param array  $tailParams
      * @return object
      * @throws NotFoundException
      * @throws ResolveException
@@ -66,7 +69,14 @@ class Container implements Containable, ArrayAccess, Countable
      */
     public function call(callable $callable, array $frontParams = [])
     {
-        $resolve = new FunctionResolve($callable);
+        if (is_string($callable) || $callable instanceof Closure) {
+            $resolve = new FunctionResolve($callable);
+        } elseif (is_array($callable) && count($callable) == 2) {
+            $resolve = new MethodResolve($callable[0], $callable[1]);
+        } else {
+            throw new InvalidArgumentException('Invalid call function or method');
+        }
+
         $params = $this->injector->make($resolve);
         $params = array_merge($frontParams, $params);
 
