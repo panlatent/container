@@ -37,7 +37,7 @@ class ClassResolve extends Resolve
         if ( ! $this->constructor) {
             return $this->class->newInstanceWithoutConstructor();
         } elseif (empty($this->parameters)) {
-            return $this->class->newInstance();
+            return $this->class->newInstanceArgs();
         }
         $params = $this->completeParams($params);
 
@@ -54,6 +54,7 @@ class ClassResolve extends Resolve
         if (! ($constructor = $class->getConstructor())) {
             $this->constructor = false;
         } else {
+            $this->constructor = true;
             $this->parameters = $constructor->getParameters();
         }
     }

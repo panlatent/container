@@ -28,8 +28,8 @@ abstract class Resolve
         $classes = [];
         foreach ($this->parameters as $parameter) {
             if (! $parameter->isOptional()) {
-                if (($class = $parameter->getClass()->getName())) {
-                    $classes[] = $class;
+                if (($class = $parameter->getClass())) {
+                    $classes[] = $class->getName();
                 }
             }
         }
