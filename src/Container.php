@@ -199,4 +199,20 @@ class Container implements Containable, ArrayAccess, Countable
     {
         $this->set($name, $value);
     }
+
+    /**
+     * @return Injector
+     */
+    public function getInjector(): Injector
+    {
+        return $this->injector;
+    }
+
+    /**
+     * @param Injector $injector
+     */
+    public function setInjector(Injector $injector)
+    {
+        $this->injector = $injector;
+    }
 }
